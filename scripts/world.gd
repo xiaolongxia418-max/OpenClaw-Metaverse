@@ -463,12 +463,18 @@ func _setup_player():
     body.name = "Body"
     player.add_child(body)
     
-    # 攝影機
+    # 攝影機（透過 CameraPivot 控制視角）
+    var camera_pivot = Node3D.new()
+    camera_pivot.name = "CameraPivot"
+    camera_pivot.position = Vector3(0, 1.4, 0)
+    
     camera = Camera3D.new()
-    camera.position = Vector3(0, 1.6, 0)
+    camera.position = Vector3(0, 0, 0)  # 相對於 CameraPivot
     camera.fov = 70
     camera.name = "Camera"
-    player.add_child(camera)
+    
+    camera_pivot.add_child(camera)
+    player.add_child(camera_pivot)
     
     add_child(player)
     
@@ -477,19 +483,15 @@ func _setup_player():
 func _input(event: InputEvent):
     if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
         var mouse_event = event as InputEventMouseMotion
+        
+        # 水平旋轉（玩家整體）
         player.rotate_y(-mouse_event.relative.x * mouse_sensitivity)
         
+        # 垂直旋轉（只有攝影機上下）
         var camera_pivot = player.get_node_or_null("CameraPivot")
-        if not camera_pivot:
-            camera_pivot = Node3D.new()
-            camera_pivot.name = "CameraPivot"
-            camera_pivot.position = Vector3(0, 1.4, 0)
-            camera.position = Vector3(0, 0, 0)
-            camera_pivot.add_child(camera)
-            player.add_child(camera_pivot)
-        
-        camera_pivot.rotate_x(-mouse_event.relative.y * mouse_sensitivity)
-        camera_pivot.rotation.x = clamp(camera_pivot.rotation.x, -PI/3, PI/3)
+        if camera_pivot:
+            camera_pivot.rotate_x(-mouse_event.relative.y * mouse_sensitivity)
+            camera_pivot.rotation.x = clamp(camera_pivot.rotation.x, -PI/3, PI/3)
 
 func _process(delta: float):
     var time = Time.get_ticks_msec() / 1000.0
