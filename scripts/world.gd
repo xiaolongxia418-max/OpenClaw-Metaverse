@@ -35,6 +35,9 @@ var velocity: Vector3 = Vector3.ZERO
 # AI 行為
 var agent_data: Dictionary = {}
 
+# 任務系統
+var task_system: Node = null
+
 func _ready():
     print("🚀 OpenClaw Metaverse 啟動！")
     _setup_environment()
@@ -44,6 +47,7 @@ func _ready():
     _create_agents()
     _setup_lighting()
     _setup_player()
+    _setup_task_system()
     print("✅ 世界建設完成！")
     print("📍 目前位置：大廳 (Lobby)")
 
@@ -673,3 +677,20 @@ func _interact_with_nearest_agent():
         data["walk_timer"] = randf_range(3, 6)
         
         print("🤝 和 " + nearest_name + " 互動")
+
+func _setup_task_system():
+    # 創建任務系統
+    var TaskSystem = load("res://scripts/task_system.gd")
+    if TaskSystem:
+        task_system = TaskSystem.new()
+        task_system.name = "TaskSystem"
+        add_child(task_system)
+        
+        # 初始化一些預設任務
+        task_system.quick_assign("持續開發 Phase 1", "Jackson", 8)
+        task_system.quick_assign("市場調研", "David", 6)
+        task_system.quick_assign("測試系統", "Nora", 7)
+        task_system.quick_assign("GDD 更新", "Lucas", 5)
+        task_system.quick_assign("UI 素材", "Eva", 6)
+        
+        print("📋 任務系統已啟動 - %d 個預設任務" % task_system.tasks.size())
