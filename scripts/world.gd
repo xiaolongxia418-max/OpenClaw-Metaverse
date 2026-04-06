@@ -31,19 +31,9 @@ var camera: Camera3D
 var player_speed: float = 8.0
 var mouse_sensitivity: float = 0.003
 var velocity: Vector3 = Vector3.ZERO
-var gravity: float = -20.0
-var is_floating: bool = true  # 3D 世界不需要重力
-
-# 對話系統
-var chat_bubbles: Dictionary = {}
-var current_room: String = "Lobby"
 
 # AI 行為
 var agent_data: Dictionary = {}
-var agent_animations: Dictionary = {}
-
-# 互動系統
-var interaction_system: Node = null
 
 func _ready():
     print("🚀 OpenClaw Metaverse 啟動！")
@@ -54,9 +44,12 @@ func _ready():
     _create_agents()
     _setup_lighting()
     _setup_player()
-    _setup_interaction_system()
     print("✅ 世界建設完成！")
     print("📍 目前位置：大廳 (Lobby)")
+
+func _set_material_on_mesh(mesh_instance: MeshInstance3D, mat: StandardMaterial3D):
+    if mesh_instance.get_mesh():
+        mesh_instance.get_mesh().surface_set_material(0, mat)
 
 func _setup_environment():
     var env = Environment.new()
@@ -87,7 +80,7 @@ func _create_ground():
     var ground_mat = StandardMaterial3D.new()
     ground_mat.albedo_color = Color(0.06, 0.04, 0.12)
     ground_mat.roughness = 0.9
-    ground.material = ground_mat
+    _set_material_on_mesh(ground, ground_mat)
     add_child(ground)
     
     # 網格線
@@ -102,7 +95,7 @@ func _create_ground():
     grid_mat.emission_enabled = true
     grid_mat.emission = Color(0.1, 0.05, 0.2)
     grid_mat.emission_energy_multiplier = 0.2
-    grid.material = grid_mat
+    _set_material_on_mesh(grid, grid_mat)
     add_child(grid)
 
 func _create_central_platform():
@@ -122,7 +115,7 @@ func _create_central_platform():
     plat_mat.emission_enabled = true
     plat_mat.emission = Color(0.3, 0.2, 0.8)
     plat_mat.emission_energy_multiplier = 0.15
-    platform.material = plat_mat
+    _set_material_on_mesh(platform, plat_mat)
     add_child(platform)
     
     # OpenClaw 標誌
@@ -152,8 +145,8 @@ func _create_central_platform():
         ring_mat.emission_enabled = true
         ring_mat.emission = Color.from_hsv(hue, 0.8, 0.4)
         ring_mat.emission_energy_multiplier = 0.4 - i * 0.1
-        ring.material = ring_mat
-        ring.set("ring_index", i)  # 用於動畫
+        _set_material_on_mesh(ring, ring_mat)
+        ring.set("ring_index", i)
         add_child(ring)
 
 func _create_rooms():
@@ -161,7 +154,7 @@ func _create_rooms():
         var room_pos = room["pos"]
         var room_color = room["color"]
         
-        # 路徑地板（連接到中央平台）
+        # 路徑地板
         var path_mesh = MeshInstance3D.new()
         var path_box = BoxMesh.new()
         path_box.size = Vector3(2, 0.1, room_pos.length() - 8)
@@ -170,12 +163,13 @@ func _create_rooms():
         path_mesh.position.y = -0.05
         if room_pos.x != 0:
             path_mesh.rotation.y = PI / 2
+        
         var path_mat = StandardMaterial3D.new()
         path_mat.albedo_color = Color(0.08, 0.06, 0.15)
         path_mat.emission_enabled = true
         path_mat.emission = room_color * 0.1
         path_mat.emission_energy_multiplier = 0.1
-        path_mesh.material = path_mat
+        _set_material_on_mesh(path_mesh, path_mat)
         add_child(path_mesh)
         
         # 房間地板
@@ -190,7 +184,7 @@ func _create_rooms():
         floor_mat.emission_enabled = true
         floor_mat.emission = room_color * 0.15
         floor_mat.emission_energy_multiplier = 0.1
-        floor.material = floor_mat
+        _set_material_on_mesh(floor, floor_mat)
         add_child(floor)
         
         # 房間邊框發光
@@ -205,7 +199,7 @@ func _create_rooms():
         border_mat.emission_enabled = true
         border_mat.emission = room_color
         border_mat.emission_energy_multiplier = 0.3
-        border.material = border_mat
+        _set_material_on_mesh(border, border_mat)
         add_child(border)
         
         # 房間標誌柱
@@ -222,7 +216,7 @@ func _create_rooms():
         pillar_base_mat.emission_enabled = true
         pillar_base_mat.emission = room_color
         pillar_base_mat.emission_energy_multiplier = 0.2
-        pillar_base.material = pillar_base_mat
+        _set_material_on_mesh(pillar_base, pillar_base_mat)
         add_child(pillar_base)
         
         var pillar = MeshInstance3D.new()
@@ -235,7 +229,7 @@ func _create_rooms():
         
         var pillar_mat = StandardMaterial3D.new()
         pillar_mat.albedo_color = Color(0.15, 0.1, 0.25)
-        pillar.material = pillar_mat
+        _set_material_on_mesh(pillar, pillar_mat)
         add_child(pillar)
         
         # 頂部發光球
@@ -251,7 +245,7 @@ func _create_rooms():
         orb_mat.emission_enabled = true
         orb_mat.emission = room_color
         orb_mat.emission_energy_multiplier = 0.8
-        orb.material = orb_mat
+        _set_material_on_mesh(orb, orb_mat)
         add_child(orb)
         
         # 房間名稱
@@ -310,7 +304,7 @@ func _create_agents():
         mat.emission_enabled = true
         mat.emission = data["color"]
         mat.emission_energy_multiplier = 0.4
-        body.material = mat
+        _set_material_on_mesh(body, mat)
         agent.add_child(body)
         
         # 頭部
@@ -320,7 +314,7 @@ func _create_agents():
         head_mesh.height = 0.6
         head.mesh = head_mesh
         head.position = Vector3(0, 1.7, 0)
-        head.material = mat
+        _set_material_on_mesh(head, mat)
         agent.add_child(head)
         
         # 眼睛發光
@@ -338,8 +332,8 @@ func _create_agents():
         eye_mat.emission_enabled = true
         eye_mat.emission = Color.WHITE
         eye_mat.emission_energy_multiplier = 2.0
-        eye_l.material = eye_mat
-        eye_r.material = eye_mat
+        _set_material_on_mesh(eye_l, eye_mat)
+        _set_material_on_mesh(eye_r, eye_mat)
         agent.add_child(eye_l)
         agent.add_child(eye_r)
         
@@ -354,12 +348,12 @@ func _create_agents():
             "emoji": data["emoji"],
             "role": data["role"],
             "tasks": data["tasks"],
-            "state": "idle",  # idle, walking, talking, working
+            "state": "idle",
             "talk_timer": randf() * 5.0,
             "walk_timer": randf() * 8.0
         }
         
-        # 名字標籤（跟著 Agent 移動）
+        # 名字標籤
         var name_label = Label3D.new()
         name_label.text = data["emoji"] + " " + data["name"]
         name_label.position = Vector3(0, 2.5, 0)
@@ -370,7 +364,7 @@ func _create_agents():
         name_label.name = "NameLabel"
         agent.add_child(name_label)
         
-        # 對話泡泡（預設隱藏）
+        # 對話泡泡
         var chat_bubble = _create_chat_bubble()
         chat_bubble.position = Vector3(0, 2.8, 0)
         chat_bubble.visible = false
@@ -392,7 +386,7 @@ func _create_chat_bubble() -> Node3D:
     bg_mat.emission_enabled = true
     bg_mat.emission = Color(0.3, 0.3, 0.2)
     bg_mat.emission_energy_multiplier = 0.1
-    bg.material = bg_mat
+    _set_material_on_mesh(bg, bg_mat)
     bubble.add_child(bg)
     
     # 泡泡文字
@@ -433,10 +427,9 @@ func _setup_lighting():
     add_child(ambient)
 
 func _setup_player():
-    # 創建玩家
     player = CharacterBody3D.new()
     player.name = "Player"
-    player.position = Vector3(0, 1.6, 8)  # 起始位置（大廳邊緣）
+    player.position = Vector3(0, 1.6, 8)
     
     # 碰撞
     var collision = CollisionShape3D.new()
@@ -456,13 +449,13 @@ func _setup_player():
     body.position = Vector3(0, 0.8, 0)
     
     var mat = StandardMaterial3D.new()
-    mat.albedo_color = Color(0.3, 0.9, 1.0)  # 青色代表玩家
+    mat.albedo_color = Color(0.3, 0.9, 1.0)
     mat.metallic = 0.5
     mat.roughness = 0.3
     mat.emission_enabled = true
     mat.emission = Color(0.2, 0.8, 1.0)
     mat.emission_energy_multiplier = 0.5
-    body.material = mat
+    _set_material_on_mesh(body, mat)
     body.name = "Body"
     player.add_child(body)
     
@@ -473,64 +466,38 @@ func _setup_player():
     camera.name = "Camera"
     player.add_child(camera)
     
-    # 攝影機支架（用於視角控制）
-    var camera_pivot = Node3D.new()
-    camera_pivot.name = "CameraPivot"
-    camera_pivot.position = Vector3(0, 1.4, 0)
-    camera.position = Vector3(0, 0, 0)
-    camera_pivot.add_child(camera)
-    player.add_child(camera_pivot)
-    
     add_child(player)
     
-    # 隱藏滑鼠
     Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-
-func _setup_interaction_system():
-    # 創建互動系統
-    interaction_system = InteractionSystem.new()
-    interaction_system.name = "InteractionSystem"
-    interaction_system.set_references(player, self)
-    add_child(interaction_system)
-    
-    # 連接信號
-    interaction_system.agent_interacted.connect(_on_agent_interacted)
-    
-    print("🔔 互動系統已啟動 - 按 E 鍵與 Agent 互動")
-
-func _on_agent_interacted(agent_name: String, command: String):
-    print("📨 收到來自 %s 的命令：%s" % [agent_name, command])
 
 func _input(event: InputEvent):
     if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
         var mouse_event = event as InputEventMouseMotion
-        # 旋轉玩家（左右）
         player.rotate_y(-mouse_event.relative.x * mouse_sensitivity)
-        # 旋轉攝影機（上下）
-        var camera_pivot = player.get_node("CameraPivot")
+        
+        var camera_pivot = player.get_node_or_null("CameraPivot")
+        if not camera_pivot:
+            camera_pivot = Node3D.new()
+            camera_pivot.name = "CameraPivot"
+            camera_pivot.position = Vector3(0, 1.4, 0)
+            camera.position = Vector3(0, 0, 0)
+            camera_pivot.add_child(camera)
+            player.add_child(camera_pivot)
+        
         camera_pivot.rotate_x(-mouse_event.relative.y * mouse_sensitivity)
-        # 限制上下旋轉角度
         camera_pivot.rotation.x = clamp(camera_pivot.rotation.x, -PI/3, PI/3)
 
 func _process(delta: float):
     var time = Time.get_ticks_msec() / 1000.0
     
-    # ===== 玩家移動 =====
     _handle_player_movement(delta)
-    
-    # ===== 光環動畫 =====
     _animate_rings(delta)
-    
-    # ===== Agent AI 行為 =====
     _update_agent_ai(delta)
-    
-    # ===== 房間傳送檢測 =====
     _check_room_teleport()
 
 func _handle_player_movement(delta: float):
     var input_dir = Vector3.ZERO
     
-    # 獲取向前和向右方向（考慮玩家視角）
     var forward = -player.global_transform.basis.z
     var right = player.global_transform.basis.x
     forward.y = 0
@@ -550,16 +517,14 @@ func _handle_player_movement(delta: float):
     if input_dir.length() > 0:
         input_dir = input_dir.normalized()
         player.position += input_dir * player_speed * delta
-        # 更新面向方向
         player.look_at(player.position + input_dir, Vector3.UP)
     
-    # 保持在地面上（浮動模式）
     player.position.y = 1.6
 
 func _animate_rings(delta: float):
     var time = Time.get_ticks_msec() / 1000.0
     for ring in get_children():
-        if ring is MeshInstance3D and ring.mesh is TorusMesh:
+        if ring is MeshInstance3D and ring.get_mesh() is TorusMesh:
             var idx = ring.get("ring_index")
             if idx != null:
                 ring.rotation.y += delta * (0.2 - idx * 0.05)
@@ -573,33 +538,23 @@ func _update_agent_ai(delta: float):
         var agent = data["node"]
         var state = data["state"]
         
-        # 計時器
         data["walk_timer"] -= delta
         data["talk_timer"] -= delta
         
-        # 狀態機
         match state:
             "idle":
-                # 待機：微微漂浮
                 var base_y = data["base_pos"].y
                 agent.position.y = base_y + sin(time * 2 + name.hash()) * 0.1
                 
-                # 隨機移動
                 if data["walk_timer"] <= 0:
                     if randf() < 0.3:
-                        # 開始走路
                         data["state"] = "walking"
-                        var offset = Vector3(
-                            randf_range(-2, 2),
-                            0,
-                            randf_range(-2, 2)
-                        )
+                        var offset = Vector3(randf_range(-2, 2), 0, randf_range(-2, 2))
                         data["target_pos"] = data["base_pos"] + offset
                         data["walk_timer"] = randf_range(2, 5)
                     else:
                         data["walk_timer"] = randf_range(3, 8)
                 
-                # 隨機對話
                 if data["talk_timer"] <= 0:
                     if randf() < 0.4:
                         _agent_speak(name, _get_random_dialogue(name))
@@ -608,34 +563,27 @@ func _update_agent_ai(delta: float):
                         data["talk_timer"] = randf_range(5, 10)
             
             "walking":
-                # 走路：移動到目標位置
                 var dir = (data["target_pos"] - agent.position)
                 dir.y = 0
                 if dir.length() > 0.1:
                     dir = dir.normalized()
                     agent.position += dir * 3.0 * delta
-                    # 面向移動方向
                     agent.look_at(agent.position + dir, Vector3.UP)
-                    # 漂浮動畫
                     agent.position.y = data["base_pos"].y + sin(time * 4) * 0.1
                 else:
                     data["state"] = "idle"
                     data["walk_timer"] = randf_range(2, 5)
             
             "talking":
-                # 對話中：保持不動
                 agent.position.y = data["base_pos"].y + sin(time * 2) * 0.1
-                # 對話結束後
                 if data["talk_timer"] <= 0:
                     _agent_stop_talking(name)
                     data["state"] = "idle"
                     data["walk_timer"] = randf_range(3, 6)
             
             "working":
-                # 工作中：左右搖擺
                 agent.position.y = data["base_pos"].y + sin(time * 3) * 0.15
                 agent.rotation.y = sin(time * 2) * 0.1
-                # 工作結束
                 if data["walk_timer"] <= 0:
                     data["state"] = "idle"
                     data["walk_timer"] = randf_range(5, 10)
@@ -652,7 +600,7 @@ func _agent_speak(agent_name: String, text: String):
         if label:
             label.text = text
         chat_bubble.visible = true
-        chat_bubble.rotation.y = player.rotation.y  # 朝向玩家
+        chat_bubble.rotation.y = player.rotation.y
     
     data["state"] = "talking"
     data["talk_timer"] = randf_range(2, 4)
@@ -684,35 +632,20 @@ func _get_random_dialogue(agent_name: String) -> String:
 func _check_room_teleport():
     var player_pos = player.position
     
-    # 檢查每個房間
     for room in ROOMS:
         var room_pos = room["pos"]
         var distance = Vector2(player_pos.x - room_pos.x, player_pos.z - room_pos.z).length()
         
-        # 如果靠近房間
         if distance < 5:
-            if current_room != room["name"]:
-                current_room = room["name"]
-                print("📍 進入房間：" + room["emoji"] + " " + room["name"])
-                # 可以在這裡載入房間內容
-        
-        # 如果在房間中央（傳送觸發）
-        if distance < 2:
-            # 顯示房間功能表（預留）
-            pass
+            print("📍 靠近房間：" + room["emoji"] + " " + room["name"])
 
 func _unhandled_input(event: InputEvent):
-    # ESC 釋放滑鼠 / 關閉互動
     if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-        if interaction_system and interaction_system.is_interacting:
-            interaction_system._close_interaction()
-        elif Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+        if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
             Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
         else:
             Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
     
-    # E 鍵：和 Agent 互動（在 interaction_system 中處理）
-    # 空白鍵：和 Agent 互動（舊功能，保留）
     if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
         _interact_with_nearest_agent()
 
