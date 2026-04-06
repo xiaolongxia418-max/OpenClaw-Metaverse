@@ -502,6 +502,7 @@ func _process(delta: float):
 func _handle_player_movement(delta: float):
     var input_dir = Vector3.ZERO
     
+    # 獲取方向向量
     var forward = -player.global_transform.basis.z
     var right = player.global_transform.basis.x
     forward.y = 0
@@ -509,6 +510,7 @@ func _handle_player_movement(delta: float):
     forward = forward.normalized()
     right = right.normalized()
     
+    # 基礎移動
     if Input.is_action_pressed("move_forward"):
         input_dir += forward
     if Input.is_action_pressed("move_backward"):
@@ -518,12 +520,26 @@ func _handle_player_movement(delta: float):
     if Input.is_action_pressed("move_right"):
         input_dir += right
     
+    # Shift 加速
+    var current_speed = player_speed
+    if Input.is_action_pressed("move_forward") and Input.is_key_pressed(KEY_SHIFT):
+        current_speed = player_speed * 1.8  # Sprint speed
+    
     if input_dir.length() > 0:
         input_dir = input_dir.normalized()
-        player.position += input_dir * player_speed * delta
+        var target_pos = player.position + input_dir * current_speed * delta
+        
+        # 平滑移動
+        player.position = player.position.lerp(target_pos, 0.3)
         player.look_at(player.position + input_dir, Vector3.UP)
-    
-    player.position.y = 1.6
+        
+        # 漂浮動畫
+        var time = Time.get_ticks_msec() / 1000.0
+        player.position.y = 1.6 + sin(time * 3) * 0.05
+    else:
+        # 待機時微微漂浮
+        var time = Time.get_ticks_msec() / 1000.0
+        player.position.y = 1.6 + sin(time * 1.5) * 0.1
 
 func _animate_rings(delta: float):
     var time = Time.get_ticks_msec() / 1000.0
