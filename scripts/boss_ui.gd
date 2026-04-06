@@ -23,14 +23,14 @@ var status_label: Label = null
 
 # 命令定義
 const COMMANDS = {
-    "status": {"icon": "📊", "label": "查看狀態", "color": Color(0.3, 0.8, 0.3)},
-    "task": {"icon": "📋", "label": "查看任務", "color": Color(0.3, 0.5, 0.9)},
-    "report": {"icon": "📈", "label": "進度報告", "color": Color(0.9, 0.7, 0.2)},
-    "assign": {"icon": "⬇️", "label": "分配任務", "color": Color(0.9, 0.4, 0.4)},
-    "priority": {"icon": "⭐", "label": "設定優先權", "color": Color(0.8, 0.3, 0.8)},
-    "stop": {"icon": "⏹", "label": "停止工作", "color": Color(0.8, 0.2, 0.2)},
-    "restart": {"icon": "🔄", "label": "重新開始", "color": Color(0.2, 0.7, 0.9)},
-    "help": {"icon": "❓", "label": "幫助", "color": Color(0.6, 0.6, 0.6)}
+    "status": {"icon": "[S]", "label": "Status", "color": Color(0.3, 0.8, 0.3)},
+    "task": {"icon": "[T]", "label": "Tasks", "color": Color(0.3, 0.5, 0.9)},
+    "report": {"icon": "[R]", "label": "Report", "color": Color(0.9, 0.7, 0.2)},
+    "assign": {"icon": "[A]", "label": "Assign", "color": Color(0.9, 0.4, 0.4)},
+    "priority": {"icon": "[P]", "label": "Priority", "color": Color(0.8, 0.3, 0.8)},
+    "stop": {"icon": "[X]", "label": "Stop", "color": Color(0.8, 0.2, 0.2)},
+    "restart": {"icon": "[~]", "label": "Restart", "color": Color(0.2, 0.7, 0.9)},
+    "help": {"icon": "[?]", "label": "Help", "color": Color(0.6, 0.6, 0.6)}
 }
 
 func _ready():
@@ -66,7 +66,7 @@ func _create_panel():
     
     var title_label = Label.new()
     title_label.name = "Title"
-    title_label.text = "👑 Boss 指令面板"
+    title_label.text = "[BOSS] Command Panel"
     title_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
     title_label.add_theme_font_size_override("font_size", 18)
     
@@ -75,7 +75,7 @@ func _create_panel():
     
     var close_btn = Button.new()
     close_btn.name = "CloseButton"
-    close_btn.text = "✕"
+    close_btn.text = "X"
     close_btn.custom_minimum_size = Vector2(35, 35)
     close_btn.pressed.connect(hide_panel)
     
@@ -193,7 +193,7 @@ func _create_command_button(cmd_name: String, cmd: Dictionary) -> Button:
     btn.add_theme_stylebox_override("hover", hover_style)
     
     var pressed_style = StyleBoxFlat.new()
-    pressed_style.bg_color = cmd.color.darkened(0.3)
+    pressed_style.bg_color = cmd.color.dark()
     pressed_style.border_color = cmd.color
     pressed_style.set_corner_radius_all(8)
     pressed_style.content_margin_left = 15
@@ -215,7 +215,7 @@ func _create_command_button(cmd_name: String, cmd: Dictionary) -> Button:
     spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     
     var arrow = Label.new()
-    arrow.text = "→"
+    arrow.text = ">"
     arrow.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
     
     hbox.add_child(icon)
@@ -284,7 +284,7 @@ func _on_command_clicked(cmd_name: String):
     emit_signal("command_sent", current_agent_name, cmd_name, {})
     
     # 顯示發送成功的提示
-    _update_status("✓ 已發送：%s → %s" % [cmd.icon, current_agent_name])
+    _update_status("Sent: %s to %s" % [cmd.icon, current_agent_name])
     
     # 播放音效（如果有的話）
     # AudioServer.play_sound("command_sent")
