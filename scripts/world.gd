@@ -42,6 +42,9 @@ var current_room: String = "Lobby"
 var agent_data: Dictionary = {}
 var agent_animations: Dictionary = {}
 
+# 互動系統
+var interaction_system: Node = null
+
 func _ready():
     print("🚀 OpenClaw Metaverse 啟動！")
     _setup_environment()
@@ -51,6 +54,7 @@ func _ready():
     _create_agents()
     _setup_lighting()
     _setup_player()
+    _setup_interaction_system()
     print("✅ 世界建設完成！")
     print("📍 目前位置：大廳 (Lobby)")
 
@@ -482,6 +486,21 @@ func _setup_player():
     # 隱藏滑鼠
     Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
+func _setup_interaction_system():
+    # 創建互動系統
+    interaction_system = InteractionSystem.new()
+    interaction_system.name = "InteractionSystem"
+    interaction_system.set_references(player, self)
+    add_child(interaction_system)
+    
+    # 連接信號
+    interaction_system.agent_interacted.connect(_on_agent_interacted)
+    
+    print("🔔 互動系統已啟動 - 按 E 鍵與 Agent 互動")
+
+func _on_agent_interacted(agent_name: String, command: String):
+    print("📨 收到來自 %s 的命令：%s" % [agent_name, command])
+
 func _input(event: InputEvent):
     if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
         var mouse_event = event as InputEventMouseMotion
@@ -683,14 +702,17 @@ func _check_room_teleport():
             pass
 
 func _unhandled_input(event: InputEvent):
-    # ESC 釋放滑鼠
+    # ESC 釋放滑鼠 / 關閉互動
     if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-        if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+        if interaction_system and interaction_system.is_interacting:
+            interaction_system._close_interaction()
+        elif Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
             Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
         else:
             Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
     
-    # 空白鍵：和 Agent 互動
+    # E 鍵：和 Agent 互動（在 interaction_system 中處理）
+    # 空白鍵：和 Agent 互動（舊功能，保留）
     if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
         _interact_with_nearest_agent()
 
